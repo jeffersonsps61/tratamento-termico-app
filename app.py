@@ -8,218 +8,150 @@ Created on Thu Aug 20 13:03:32 2026
 #%%
 import streamlit as st
 
-# Configuração da Página
-st.set_page_config(
-    page_title="Uniforja | Divisão de Tratamento Térmico",
-    page_icon="⚙️",
-    layout="wide"
-)
-
-# Estilização em CSS para seguir a paleta Uniforja (Azul institucional e cinza industrial)
-st.markdown("""
-    <style>
-    .main {
-        background-color: #f4f6f9;
-    }
-    .stButton>button {
-        background-color: #003366;
-        color: white;
-        border-radius: 5px;
-        font-weight: bold;
-    }
-    .stButton>button:hover {
-        background-color: #002244;
-        color: #ffffff;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- CABEÇALHO COM LOGO INSTITUCIONAL ---
-col_logo, col_titulo = st.columns([1, 4])
-
-with col_logo:
-    # Exibe a logo oficial salva na pasta do projeto
-    st.image("logo_uniforja.png", use_container_width=True)
-
-with col_titulo:
-    st.title("⚙️ Soluções Avançadas em Tratamento Térmico")
-    st.subheader("Engenharia de Superfície e Propriedades Mecânicas de Alta Performance")
-
-st.markdown("---")
-
-# Abas Navegáveis do Site
-aba1, aba2, aba3 = st.tabs([
-    "🧮 Calculadora de Carbono Equivalente (CE) & D_I", 
-    "📚 Fundamentos Metalúrgicos", 
-    "🏭 Serviços de Tratamento Térmico & Cotação"
-])
-
-# --- ABA 1: CALCULADORA DE CE E DI ---
+# --- ABA 1: CALCULADORA TÉCNICA E CONVERSOR DE UNIDADES ---
 with aba1:
-    st.header("Análise de Temperabilidade (CE - IIW & D_I - ASTM A255)")
-    st.write("Insira a composição química do aço (em % de massa) para calcular o Carbono Equivalente e o Diâmetro Crítico Ideal:")
+    st.header("Central de Cálculos de Engenharia e Conversões")
+    st.write("Ferramentas operacionais para especificação de tratamento térmico, dimensionamento e conversões mecânicas.")
 
-    col_input1, col_input2, col_input3 = st.columns(3)
+    # Sub-abas internas para organizar as ferramentas
+    sub1, sub2, sub3, sub4 = st.tabs([
+        "🧮 Carbono Equivalente (CE)", 
+        "🔄 Conversão de Dureza (ASTM E140)", 
+        "📐 Conversor de Tensões e Impacto", 
+        "⚖️ Calculadora de Peso e Massa"
+    ])
 
-    with col_input1:
-        c = st.number_input("Carbono (C %)", min_value=0.0, max_value=2.0, value=0.40, step=0.01)
-        mn = st.number_input("Manganês (Mn %)", min_value=0.0, max_value=3.0, value=0.70, step=0.01)
-        si = st.number_input("Silício (Si %)", min_value=0.0, max_value=2.0, value=0.25, step=0.01)
+    # 1. CALCULADORA DE CARBONO EQUIVALENTE
+    with sub1:
+        st.subheader("Cálculo de Carbono Equivalente (CE - IIW)")
+        
+        col_c1, col_c2, col_c3 = st.columns(3)
+        with col_c1:
+            c = st.number_input("Carbono (C %)", min_value=0.0, max_value=2.0, value=0.40, step=0.01)
+            mn = st.number_input("Manganês (Mn %)", min_value=0.0, max_value=3.0, value=0.70, step=0.01)
+        with col_c2:
+            cr = st.number_input("Cromo (Cr %)", min_value=0.0, max_value=5.0, value=0.80, step=0.01)
+            mo = st.number_input("Molibdênio (Mo %)", min_value=0.0, max_value=2.0, value=0.20, step=0.01)
+            v = st.number_input("Vanádio (V %)", min_value=0.0, max_value=1.0, value=0.00, step=0.01)
+        with col_c3:
+            ni = st.number_input("Níquel (Ni %)", min_value=0.0, max_value=5.0, value=0.00, step=0.01)
+            cu = st.number_input("Cobre (Cu %)", min_value=0.0, max_value=2.0, value=0.00, step=0.01)
 
-    with col_input2:
-        cr = st.number_input("Cromo (Cr %)", min_value=0.0, max_value=5.0, value=0.80, step=0.01)
-        mo = st.number_input("Molibdênio (Mo %)", min_value=0.0, max_value=2.0, value=0.20, step=0.01)
-        v = st.number_input("Vanádio (V %)", min_value=0.0, max_value=1.0, value=0.00, step=0.01)
+        ce = c + (mn / 6) + ((cr + mo + v) / 5) + ((ni + cu) / 15)
 
-    with col_input3:
-        ni = st.number_input("Níquel (Ni %)", min_value=0.0, max_value=5.0, value=0.00, step=0.01)
-        cu = st.number_input("Cobre (Cu %)", min_value=0.0, max_value=2.0, value=0.00, step=0.01)
-
-    # Cálculo do Carbono Equivalente (IIW)
-    ce = c + (mn / 6) + ((cr + mo + v) / 5) + ((ni + cu) / 15)
-
-    # Cálculo do Diâmetro Crítico Ideal (D_I) segundo Grossmann / ASTM A255 (Grão ASTM 7)
-    d_base = 0.54 * (c ** 0.5) if c > 0 else 0
-    f_mn = 1 + (3.33 * mn)
-    f_si = 1 + (0.70 * si)
-    f_cr = 1 + (2.16 * cr)
-    f_mo = 1 + (3.00 * mo)
-    f_ni = 1 + (0.36 * ni)
-    f_cu = 1 + (0.36 * cu)
-
-    di_pol = d_base * f_mn * f_si * f_cr * f_mo * f_ni * f_cu  # polegadas
-    di_mm = di_pol * 25.4  # mm
-
-    st.markdown("---")
-    st.markdown("### Resultado da Avaliação Técnica")
-    
-    col_res1, col_res2 = st.columns([1, 2])
-    
-    with col_res1:
         st.metric(label="Carbono Equivalente (CE - IIW)", value=f"{ce:.3f}%")
-        st.metric(label="Diâmetro Crítico Ideal (D_I)", value=f"{di_mm:.1f} mm", delta=f"{di_pol:.2f} pol")
-
-    with col_res2:
-        if ce < 0.35:
-            st.info(
-                "🟢 **Baixa Temperabilidade (CE < 0,35%)**\n\n"
-                f"* **Diâmetro Crítico Ideal ($D_I$):** ~{di_mm:.1f} mm.\n"
-                "* **Comportamento Térmico:** Formação de martensita limitada a seções finas sob alta severidade de resfriamento (água/polímero).\n"
-                "* **Soldabilidade:** Excelente."
-            )
-        elif 0.35 <= ce < 0.45:
-            st.success(
-                "🟡 **Moderada Temperabilidade (0,35% ≤ CE < 0,45%)**\n\n"
-                f"* **Diâmetro Crítico Ideal ($D_I$):** ~{di_mm:.1f} mm.\n"
-                "* **Comportamento Térmico:** Excelente resposta a Têmpera e Revenido (Q&T) para peças cilíndricas de médio porte até o diâmetro calculado.\n"
-                "* **Cuidados:** Baixo/Moderado risco de trincas."
-            )
-        elif 0.45 <= ce < 0.60:
-            st.warning(
-                "🟠 **Alta Temperabilidade (0,45% ≤ CE < 0,60%)**\n\n"
-                f"* **Diâmetro Crítico Ideal ($D_I$):** ~{di_mm:.1f} mm.\n"
-                "* **Comportamento Térmico:** Alta profundidade de temperabilidade. Exige resfriamento em óleo para evitar distorções ou trincas de têmpera.\n"
-                "* **Cuidados:** Necessário pré-aquecimento em etapas de soldagem."
-            )
-        else:
-            st.error(
-                "🔴 **Muito Alta Temperabilidade (CE ≥ 0,60%)**\n\n"
-                f"* **Diâmetro Crítico Ideal ($D_I$):** ~{di_mm:.1f} mm.\n"
-                "* **Comportamento Térmico:** Núcleo temperado em seções robustas. Exige têmpera em óleo aquecido, martêmpera ou resfriamento escalonado.\n"
-                "* **Cuidados:** Elevado risco de trincamento e empenamento. Exige alívio de tensões/revenimento imediato."
-            )
-
-# --- ABA 2: TEORIA E CONCEITOS ---
-with aba2:
-    st.header("Tratamento Térmico de Aços")
-    st.write(
-        "O tratamento térmico é a combinação de operações de aquecimento e resfriamento no estado sólido, "
-        "visando conferir às ligas metálicas características específicas de dureza, tenacidade e resistência mecânica."
-    )
-    
-    col_t1, col_t2 = st.columns(2)
-    
-    with col_t1:
-        st.markdown("""
-        ### Etapas Fundamentais
-        1. **Austenitização:** Aquecimento acima da temperatura crítica para solubilização do carbono na matriz $\gamma$.
-        2. **Têmpera:** Resfriamento contínuo em taxa superior à taxa crítica para obtenção de estrutura martensítica.
-        3. **Revenido:** Tratamento térmico subcrítico para alívio de tensões e ajuste do compromisso Dureza x Tenacidade.
-        """)
         
-    with col_t2:
         st.markdown("""
-        ### Parâmetros Controlados
-        * **Taxa de Resfriamento:** Determina as microestruturas formadas (Ferrita, Perlita, Bainita ou Martensita).
-        * **Tempo de Encharque:** Garante a homogeneização da temperatura e dissolução total dos carbonetos no núcleo.
-        * **Atmosfera Controlada:** Previne a descarbonetação e oxidação superficial durante os ciclos.
+        **Importância do CE no Tratamento Térmico:**
+        O Carbono Equivalente sintetiza o efeito combinado dos elementos de liga na temperabilidade do aço. Valores elevados de $CE$ indicam retardo na transformação austeno-ferrítica, facilitando a formação de martensita profunda, porém aumentando o risco de trincas de têmpera e exigindo meios de resfriamento moderados (óleo/polímero) e rigoroso controle de alívio de tensões.
         """)
 
-# --- ABA 3: SERVIÇOS UNIFORJA E COTAÇÃO ---
-with aba3:
-    col_img_forno, col_info_forno = st.columns([1.2, 1.8])
-
-    with col_img_forno:
-        # Exibe a imagem local do forno
-        st.image("forno.png", caption="Fornos operacionais Uniforja", use_container_width=True)
-
-    with col_info_forno:
-        st.markdown("### TRATAMENTO TÉRMICO UNIFORJA")
-        st.write(
-            "A **UNIFORJA** possui fornos para Tratamento Térmico homologados conforme as normas "
-            "**API-6A** e **AMS-2750**, atendendo às mais diversas especificações e demandas do mercado:"
-        )
-        st.markdown("""
-        * **Recozimento (Pleno, Isotérmico e Subcrítico)**
-        * **Normalização**
-        * **Têmpera e Revenido (Q&T)**
-        * **Solubilização e Envelhecimento**
-        * **Alívio de Tensões**
-        * **Coalescimento e Esferoidização**
-        * **Ciclos Especiais (sob consulta)**
-        """)
-
-    st.markdown("---")
-
-    # Formulário de Cotação
-    st.subheader("Solicite uma Cotação ou Análise Técnica")
-    
-    with st.form("form_orcamento_uniforja"):
-        col_f1, col_f2 = st.columns(2)
+    # 2. CONVERSÃO DE DUREZA (ASTM E140)
+    with sub2:
+        st.subheader("Conversão de Dureza (Aços Não Ligados e Ligas - ASTM E140)")
         
-        with col_f1:
-            nome = st.text_input("Nome do Solicitante *")
-            empresa = st.text_input("Empresa / Razão Social *")
-            email = st.text_input("E-mail Corporativo *")
-            telefone = st.text_input("Telefone / WhatsApp com DDD *")
+        # Tabela simplificada de conversão de dureza baseada na ASTM E140
+        tabela_dureza = [
+            {"HRC": 68, "HBW": 940, "HV": 940, "HRB": "-"},
+            {"HRC": 60, "HBW": 654, "HV": 697, "HRB": "-"},
+            {"HRC": 55, "HBW": 560, "HV": 595, "HRB": "-"},
+            {"HRC": 50, "HBW": 481, "HV": 513, "HRB": "-"},
+            {"HRC": 45, "HBW": 421, "HV": 446, "HRB": "-"},
+            {"HRC": 40, "HBW": 371, "HV": 392, "HRB": "-"},
+            {"HRC": 35, "HBW": 327, "HV": 345, "HRB": "-"},
+            {"HRC": 30, "HBW": 286, "HV": 302, "HRB": "107"},
+            {"HRC": 25, "HBW": 253, "HV": 266, "HRB": "102"},
+            {"HRC": 20, "HBW": 226, "HV": 238, "HRB": "98.7"}
+        ]
 
-        with col_f2:
-            servico_desejado = st.selectbox(
-                "Tratamento Térmico Desejado *",
-                [
-                    "Têmpera e Revenido (Q&T)",
-                    "Normalização",
-                    "Recozimento Pleno / Isotérmico",
-                    "Solubilização de Inoxidáveis",
-                    "Alívio de Tensões",
-                    "Outros / Consultar Engenharia"
-                ]
-            )
-            liga_material = st.text_input("Liga do Aço (ex: SAE 4140, SAE 8620, F22, F51) *")
-            peso_lote = st.text_input("Peso Estimado do Lote / Peça (kg ou toneladas)")
+        val_hrc = st.slider("Selecione a Dureza em Rockwell C (HRC):", min_value=20, max_value=68, value=40, step=1)
+        
+        # Busca a aproximação linear mais próxima na tabela
+        item_proximo = min(tabela_dureza, key=lambda x: abs(x["HRC"] - val_hrc))
+        
+        col_d1, col_d2, col_d3 = st.columns(3)
+        col_d1.metric("Rockwell C (HRC)", f"{val_hrc}")
+        col_d2.metric("Brinell (HBW - 3000 kgf)", f"~{item_proximo['HBW']}")
+        col_d3.metric("Vickers (HV)", f"~{item_proximo['HV']}")
 
-        mensagem = st.text_area(
-            "Detalhamento Técnico (Dimensões das peças, Dureza Alvo desejada em HRC/HBW ou norma aplicável)"
-        )
+    # 3. CONVERSOR DE TENSÕES E IMPACTO (INSPIRADO NA PLANILHA)
+    with sub3:
+        st.subheader("Conversor de Unidades de Resistência e Impacto")
         
-        submitted = st.form_submit_button("Enviar Solicitação de Cotação")
+        col_t1, col_t2 = st.columns(2)
         
-        if submitted:
-            if not nome or not email or not empresa or not liga_material:
-                st.warning("⚠️ Por favor, preencha todos os campos obrigatórios marcados com (*).")
+        with col_t1:
+            st.markdown("#### Tensões (Mecanica de Tração)")
+            valor_tensao = st.number_input("Valor de Tensão de Entrada:", value=100.0, step=10.0)
+            unid_tensao = st.selectbox("Unidade de Entrada:", ["ksi", "Psi", "Mpa", "Kgf/mm²"])
+            
+            # Converte tudo para MPa como base
+            if unid_tensao == "ksi":
+                mpa = valor_tensao * 6.89476
+            elif unid_tensao == "Psi":
+                mpa = valor_tensao * 0.00689476
+            elif unid_tensao == "Kgf/mm²":
+                mpa = valor_tensao * 9.80665
             else:
-                st.success(
-                    f"✅ **Obrigado, {nome}!** Sua solicitação para o tratamento de **{servico_desejado}** "
-                    f"na liga **{liga_material}** foi enviada à equipe de engenharia Uniforja."
-                )
+                mpa = valor_tensao
+
+            st.write(f"**Mpa:** {mpa:.2f}")
+            st.write(f"**ksi:** {mpa / 6.89476:.2f}")
+            st.write(f"**Psi:** {mpa / 0.00689476:.1f}")
+            st.write(f"**Kgf/mm²:** {mpa / 9.80665:.2f}")
+
+        with col_t2:
+            st.markdown("#### Ensaios de Impacto (Charpy)")
+            valor_impacto = st.number_input("Valor de Energia de Entrada:", value=27.0, step=1.0)
+            unid_impacto = st.selectbox("Unidade de Entrada:", ["Joule (J)", "Kgf x m", "Ft.lbf"])
+            
+            if unid_impacto == "Joule (J)":
+                j = valor_impacto
+            elif unid_impacto == "Kgf x m":
+                j = valor_impacto * 9.80665
+            else:
+                j = valor_impacto * 1.35582
+
+            st.write(f"**Joule (J):** {j:.1f}")
+            st.write(f"**Kgf x m:** {j / 9.80665:.2f}")
+            st.write(f"**Ft.lbf:** {j / 1.35582:.1f}")
+
+    # 4. CALCULADORA DE PESO DE PEÇAS
+    with sub4:
+        st.subheader("Estimativa de Massa e Peso do Lote")
+        
+        geometria = st.selectbox("Formato da Peça:", ["Cilindro / Barra Redonda", "Bloco Retangular / Chapa", "Tubo / Anel"])
+        densidade = st.number_input("Densidade do Material (g/cm³):", value=7.85, step=0.01) # Padrão do aço
+        
+        peso_unitario = 0.0
+
+        if geometria == "Cilindro / Barra Redonda":
+            diametro = st.number_input("Diâmetro (mm):", value=100.0, step=5.0)
+            comprimento = st.number_input("Comprimento (mm):", value=500.0, step=10.0)
+            # Volume em cm³
+            volume = (3.14159 * ((diametro/10/2)**2) * (comprimento/10))
+            peso_unitario = (volume * densidade) / 1000  # em kg
+
+        elif geometria == "Bloco Retangular / Chapa":
+            largura = st.number_input("Largura (mm):", value=100.0, step=5.0)
+            espessura = st.number_input("Espessura (mm):", value=50.0, step=5.0)
+            comprimento = st.number_input("Comprimento (mm):", value=500.0, step=10.0)
+            volume = (largura/10) * (espessura/10) * (comprimento/10)
+            peso_unitario = (volume * densidade) / 1000
+
+        elif geometria == "Tubo / Anel":
+            d_ext = st.number_input("Diâmetro Externo (mm):", value=200.0, step=5.0)
+            d_int = st.number_input("Diâmetro Interno (mm):", value=100.0, step=5.0)
+            altura = st.number_input("Altura / Comprimento (mm):", value=100.0, step=5.0)
+            v_ext = 3.14159 * ((d_ext/10/2)**2) * (altura/10)
+            v_int = 3.14159 * ((d_int/10/2)**2) * (altura/10)
+            volume = v_ext - v_int
+            peso_unitario = (volume * densidade) / 1000
+
+        qtd_pecas = st.number_input("Quantidade de Peças no Lote:", min_value=1, value=1, step=1)
+        peso_total = peso_unitario * qtd_pecas
+
+        col_p1, col_p2 = st.columns(2)
+        col_p1.metric("Peso Unitário Estimado", f"{peso_unitario:.2f} kg")
+        col_p2.metric("Peso Total do Lote", f"{peso_total:.2f} kg", f"{peso_total/1000:.3f} toneladas")
 #%%
