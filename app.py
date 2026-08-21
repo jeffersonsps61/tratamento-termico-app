@@ -8,14 +8,18 @@ Created on Thu Aug 20 13:03:32 2026
 #%%
 import streamlit as st
 
+# ==========================================================
 # 1. Configuração da Página
+# ==========================================================
 st.set_page_config(
     page_title="Uniforja | Divisão de Tratamento Térmico",
     page_icon="⚙️",
     layout="wide"
 )
 
+# ==========================================================
 # 2. Estilização CSS Personalizada
+# ==========================================================
 st.markdown("""
     <style>
     .main {
@@ -31,14 +35,27 @@ st.markdown("""
         background-color: #002244;
         color: #ffffff;
     }
+    .calc-box {
+        background-color: #ffffff;
+        border-left: 5px solid #003366;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        margin-bottom: 15px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
+# ==========================================================
 # 3. Cabeçalho Institucional
+# ==========================================================
 col_logo, col_titulo = st.columns([1, 4])
 
 with col_logo:
-    st.image("logo_uniforja.png", use_container_width=True)
+    try:
+        st.image("logo_uniforja.png", use_container_width=True)
+    except Exception:
+        st.markdown("### ⚙️ **UNIFORJA**\n*Divisão Térmica*")
 
 with col_titulo:
     st.title("⚙️ Soluções Avançadas em Tratamento Térmico")
@@ -46,12 +63,61 @@ with col_titulo:
 
 st.markdown("---")
 
+# ==========================================================
 # 4. Definição das Abas Principais
+# ==========================================================
 aba1, aba2, aba3 = st.tabs([
     "🧮 Central de Cálculos & Conversões", 
     "📚 Fundamentos Metalúrgicos (Fe-Fe₃C)", 
     "🏭 Serviços Uniforja & Cotação"
 ])
+
+# ==========================================================
+# Tabela Oficial ASTM E140 (Aços Carbono e Baixa Liga)
+# ==========================================================
+TABELA_ASTM_E140 = [
+    (20.0, 226, 238), (21.0, 231, 243), (22.0, 237, 248), (23.0, 243, 254), (24.0, 248, 260),
+    (25.0, 253, 266), (26.0, 259, 273), (27.0, 264, 279), (28.0, 271, 286), (29.0, 278, 294),
+    (30.0, 286, 302), (31.0, 294, 311), (32.0, 301, 318), (33.0, 311, 327), (34.0, 319, 336),
+    (35.0, 327, 345), (36.0, 336, 354), (37.0, 344, 363), (38.0, 353, 373), (39.0, 362, 382),
+    (40.0, 371, 392), (41.0, 381, 402), (42.0, 390, 412), (43.0, 400, 423), (44.0, 410, 434),
+    (45.0, 421, 446), (46.0, 432, 458), (47.0, 443, 470), (48.0, 455, 483), (49.0, 467, 497),
+    (50.0, 481, 513), (51.0, 496, 528), (52.0, 512, 545), (53.0, 528, 562), (54.0, 543, 578),
+    (55.0, 560, 595), (56.0, 577, 613), (57.0, 595, 633), (58.0, 614, 653), (59.0, 634, 675),
+    (60.0, 654, 697), (61.0, 674, 720), (62.0, 697, 746), (63.0, 720, 772), (64.0, 745, 800),
+    (65.0, 772, 829), (66.0, 800, 860), (67.0, 829, 892), (68.0, 861, 940)
+]
+
+def converter_hrc_para_hbw(val_hrc):
+    """Interpolação linear precisa para HRC -> HBW conforme ASTM E140"""
+    if val_hrc < 20.0 or val_hrc > 68.0:
+        return None, None
+    for i in range(len(TABELA_ASTM_E140) - 1):
+        hrc_a, hbw_a, hv_a = TABELA_ASTM_E140[i]
+        hrc_b, hbw_b, hv_b = TABELA_ASTM_E140[i+1]
+        if hrc_a <= val_hrc <= hrc_b:
+            fator = (val_hrc - hrc_a) / (hrc_b - hrc_a)
+            hbw_calc = hbw_a + fator * (hbw_b - hbw_a)
+            hv_calc = hv_a + fator * (hv_b - hv_a)
+            return round(hbw_calc, 1), round(hv_calc, 1)
+    return None, None
+
+def converter_hbw_para_hrc(val_hbw):
+    """Interpolação linear precisa para HBW -> HRC conforme ASTM E140"""
+    hbw_min = TABELA_ASTM_E140[0][1]
+    hbw_max = TABELA_ASTM_E140[-1][1]
+    if val_hbw < hbw_min or val_hbw > hbw_max:
+        return None, None
+    for i in range(len(TABELA_ASTM_E140) - 1):
+        hrc_a, hbw_a, hv_a = TABELA_ASTM_E140[i]
+        hrc_b, hbw_b, hv_b = TABELA_ASTM_E140[i+1]
+        if hbw_a <= val_hbw <= hbw_b:
+            fator = (val_hbw - hbw_a) / (hbw_b - hbw_a)
+            hrc_calc = hrc_a + fator * (hrc_b - hrc_a)
+            hv_calc = hv_a + fator * (hv_b - hv_a)
+            return round(hrc_calc, 1), round(hv_calc, 1)
+    return None, None
+
 
 # ==========================================================
 # --- ABA 1: CENTRAL DE CÁLCULOS E CONVERSÕES ---
@@ -62,16 +128,18 @@ with aba1:
 
     sub1, sub2, sub3, sub4, sub5 = st.tabs([
         "🧮 Carbono Equivalente (CE)", 
-        "🔄 Conversão de Dureza (ASTM E140)", 
+        "🔄 Conversão de Dureza HRC ⇄ HBW", 
         "💪 Relação Dureza x Resistência",
         "📐 Conversor de Tensões e Impacto", 
         "⚖️ Calculadora de Peso e Massa"
     ])
 
+    # ------------------------------------------------------
     # 1.1 Carbono Equivalente
+    # ------------------------------------------------------
     with sub1:
         st.subheader("Cálculo de Carbono Equivalente (CE - IIW)")
-        
+
         col_c1, col_c2, col_c3 = st.columns(3)
         with col_c1:
             c = st.number_input("Carbono (C %)", min_value=0.0, max_value=2.0, value=0.40, step=0.01)
@@ -87,44 +155,82 @@ with aba1:
         ce = c + (mn / 6) + ((cr + mo + v) / 5) + ((ni + cu) / 15)
 
         st.metric(label="Carbono Equivalente (CE - IIW)", value=f"{ce:.3f}%")
-        
+
         st.markdown("""
         **Por que o CE é Vital no Tratamento Térmico?**
         O Carbono Equivalente sintetiza o efeito combinado dos elementos de liga na temperabilidade do aço. Valores elevados de $CE$ indicam retardo na transformação austeno-ferrítica, facilitando a formação de martensita profunda, porém aumentando o risco de trincas de têmpera e exigindo meios de resfriamento moderados (óleo/polímero) e rigoroso controle de alívio de tensões.
         """)
 
-    # 1.2 Conversão de Dureza ASTM E140
+    # ------------------------------------------------------
+    # 1.2 Conversão de Dureza HRC <-> HBW (ASTM E140)
+    # ------------------------------------------------------
     with sub2:
-        st.subheader("Conversão de Dureza (Aços Não Ligados e Ligas - ASTM E140)")
-        
-        tabela_dureza = [
-            {"HRC": 68, "HBW": 940, "HV": 940},
-            {"HRC": 60, "HBW": 654, "HV": 697},
-            {"HRC": 55, "HBW": 560, "HV": 595},
-            {"HRC": 50, "HBW": 481, "HV": 513},
-            {"HRC": 45, "HBW": 421, "HV": 446},
-            {"HRC": 40, "HBW": 371, "HV": 392},
-            {"HRC": 35, "HBW": 327, "HV": 345},
-            {"HRC": 30, "HBW": 286, "HV": 302},
-            {"HRC": 25, "HBW": 253, "HV": 266},
-            {"HRC": 20, "HBW": 226, "HV": 238}
-        ]
+        st.subheader("Calculadora de Conversão Direta de Dureza (ASTM E140)")
+        st.write("Escolha o sentido da conversão, insira o valor desejado e obtenha a equivalência exata calculada por interpolação normativa.")
 
-        val_hrc = st.slider("Selecione a Dureza em Rockwell C (HRC):", min_value=20, max_value=68, value=40, step=1)
-        item_proximo = min(tabela_dureza, key=lambda x: abs(x["HRC"] - val_hrc))
-        
-        col_d1, col_d2, col_d3 = st.columns(3)
-        col_d1.metric("Rockwell C (HRC)", f"{val_hrc}")
-        col_d2.metric("Brinell (HBW - 3000 kgf)", f"~{item_proximo['HBW']}")
-        col_d3.metric("Vickers (HV)", f"~{item_proximo['HV']}")
+        sentido = st.radio(
+            "Selecione o Sentido da Conversão:",
+            ["Rockwell C (HRC)  ➔  Brinell (HBW)", "Brinell (HBW)  ➔  Rockwell C (HRC)"],
+            horizontal=True
+        )
 
-    # 1.3 ESTIMATIVA DE RESISTÊNCIA À TRAÇÃO VIA DUREZA (AJUSTADO EM 2 CATEGORIAS)
+        col_conv1, col_conv2 = st.columns(2)
+
+        if "HRC" in sentido.split("➔")[0]:
+            with col_conv1:
+                val_input = st.number_input(
+                    "Digite a Dureza em Rockwell C (HRC):",
+                    min_value=20.0,
+                    max_value=68.0,
+                    value=40.0,
+                    step=0.5
+                )
+                
+            res_hbw, res_hv = converter_hrc_para_hbw(val_input)
+
+            with col_conv2:
+                if res_hbw:
+                    st.metric("Dureza Brinell Calculada (HBW)", f"{res_hbw:.1f} HBW")
+                    st.caption(f"💡 Equivalência estimada em Vickers: **~{res_hv:.1f} HV**")
+                else:
+                    st.error("Valor fora da faixa permitida pela norma ASTM E140 (20.0 a 68.0 HRC).")
+
+        else:
+            with col_conv1:
+                val_input = st.number_input(
+                    "Digite a Dureza em Brinell (HBW - 3000 kgf):",
+                    min_value=226.0,
+                    max_value=861.0,
+                    value=371.0,
+                    step=1.0
+                )
+
+            res_hrc, res_hv = converter_hbw_para_hrc(val_input)
+
+            with col_conv2:
+                if res_hrc:
+                    st.metric("Dureza Rockwell C Calculada (HRC)", f"{res_hrc:.1f} HRC")
+                    st.caption(f"💡 Equivalência estimada em Vickers: **~{res_hv:.1f} HV**")
+                else:
+                    st.error("Valor fora da faixa permitida pela norma ASTM E140 (226 a 861 HBW).")
+
+        st.markdown("---")
+        st.markdown("#### 🔍 Tabela Simplificada de Referência Rápida (ASTM E140 - Aços Carbono e Liga)")
+
+        col_t1, col_t2, col_t3 = st.columns(3)
+        col_t1.write("**Dureza Rockwell C (HRC)**\n* 20 HRC\n* 30 HRC\n* 40 HRC\n* 50 HRC\n* 60 HRC\n* 65 HRC")
+        col_t2.write("**Brinell Equivalente (HBW)**\n* ~226 HBW\n* ~286 HBW\n* ~371 HBW\n* ~481 HBW\n* ~654 HBW\n* ~772 HBW")
+        col_t3.write("**Vickers Equivalente (HV)**\n* ~238 HV\n* ~302 HV\n* ~392 HV\n* ~513 HV\n* ~697 HV\n* ~829 HV")
+
+    # ------------------------------------------------------
+    # 1.3 Estimativa de Resistência à Tração
+    # ------------------------------------------------------
     with sub3:
         st.subheader("Estimativa Teórica da Resistência à Tração (LR)")
         st.write("Estime o Limite de Resistência à Tração aproximado a partir da Dureza Brinell (HBW):")
-        
+
         col_r1, col_r2 = st.columns(2)
-        
+
         with col_r1:
             hbw_in = st.number_input("Dureza Brinell (HBW):", min_value=100, max_value=750, value=300, step=5)
             familia_aco = st.selectbox(
@@ -134,7 +240,7 @@ with aba1:
                     "Aço Liga / Cr-Mo (Ex: SAE 4140, 4340)"
                 ]
             )
-            
+
         with col_r2:
             if "Carbono" in familia_aco:
                 fator = 3.53
@@ -155,16 +261,18 @@ with aba1:
             "Valores exatos devem ser validados mediante ensaio destrutivo de tração conforme norma ISO 6892 / ASTM A370."
         )
 
+    # ------------------------------------------------------
     # 1.4 Conversor de Tensões e Impacto
+    # ------------------------------------------------------
     with sub4:
         st.subheader("Conversor de Unidades de Resistência e Impacto")
         col_t1, col_t2 = st.columns(2)
-        
+
         with col_t1:
             st.markdown("#### Tensões (Mecânica de Tração)")
             valor_tensao = st.number_input("Valor de Tensão de Entrada:", value=100.0, step=10.0)
             unid_tensao = st.selectbox("Unidade de Entrada:", ["ksi", "Psi", "MPa", "Kgf/mm²"])
-            
+
             if unid_tensao == "ksi":
                 mpa = valor_tensao * 6.89476
             elif unid_tensao == "Psi":
@@ -183,7 +291,7 @@ with aba1:
             st.markdown("#### Ensaios de Impacto (Charpy)")
             valor_impacto = st.number_input("Valor de Energia de Entrada:", value=27.0, step=1.0)
             unid_impacto = st.selectbox("Unidade de Entrada:", ["Joule (J)", "Kgf x m", "Ft.lbf"])
-            
+
             if unid_impacto == "Joule (J)":
                 j = valor_impacto
             elif unid_impacto == "Kgf x m":
@@ -195,12 +303,14 @@ with aba1:
             st.write(f"**Kgf x m:** {j / 9.80665:.2f}")
             st.write(f"**Ft.lbf:** {j / 1.35582:.1f}")
 
+    # ------------------------------------------------------
     # 1.5 Calculadora de Peso e Massa
+    # ------------------------------------------------------
     with sub5:
         st.subheader("Estimativa de Massa e Peso do Lote")
         geometria = st.selectbox("Formato da Peça:", ["Cilindro / Barra Redonda", "Bloco Retangular / Chapa", "Tubo / Anel"])
         densidade = st.number_input("Densidade do Material (g/cm³):", value=7.85, step=0.01)
-        
+
         peso_unitario = 0.0
 
         if geometria == "Cilindro / Barra Redonda":
@@ -248,7 +358,7 @@ with aba2:
 
     with col_fec1:
         st.subheader("1. Tratamentos Supracríticos (Acima de A₃ / A₁)")
-        
+
         st.markdown("""
         #### 🔥 Têmpera (Hardening)
         * **Faixa Térmica:** $30^\circ\text{C}$ a $50^\circ\text{C}$ acima de **$A_3$** para aços hipoeutetoides ($C < 0{,}77\%$).
@@ -293,7 +403,10 @@ with aba3:
     col_img_forno, col_info_forno = st.columns([1.2, 1.8])
 
     with col_img_forno:
-        st.image("forno.png", caption="Fornos operacionais Uniforja", use_container_width=True)
+        try:
+            st.image("forno.png", caption="Fornos operacionais Uniforja", use_container_width=True)
+        except Exception:
+            st.info("🔥 **Fornos Industriais Uniforja**\nHomologados para processos de alta precisão.")
 
     with col_info_forno:
         st.markdown("### TRATAMENTO TÉRMICO UNIFORJA")
@@ -315,7 +428,7 @@ with aba3:
 
     # Formulário para Captação de Leads
     st.subheader("Solicite uma Cotação ou Análise Técnica")
-    
+
     with st.form("form_orcamento_uniforja"):
         col_f1, col_f2 = st.columns(2)
         with col_f1:
@@ -342,9 +455,9 @@ with aba3:
         mensagem = st.text_area(
             "Detalhamento Técnico (Dimensões das peças, Dureza Alvo desejada em HRC/HBW ou norma aplicável)"
         )
-        
+
         submitted = st.form_submit_button("Enviar Solicitação de Cotação")
-        
+
         if submitted:
             if not nome or not email or not empresa or not liga_material:
                 st.warning("⚠️ Por favor, preencha todos os campos obrigatórios marcados com (*).")
