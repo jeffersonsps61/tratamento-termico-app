@@ -350,7 +350,7 @@ with aba2:
     st.write(
         "A especificação da temperatura de tratamento térmico é rigorosamente balizada pelas "
         "linhas críticas de transformação do diagrama de fases: **A₁ (727 °C - Linha Eutetóide)**, "
-        "**A₃ (Transformação Ferrita-Austenita)** e **A_cm (Limite de Solubilidade da Cimentita)**."
+        "**A₃ (Transformação Ferrita-Austenita)** e **A(cm) (Limite de Solubilidade da Cimentita)**."
     )
     st.markdown("---")
 
